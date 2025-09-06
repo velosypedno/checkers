@@ -42,10 +42,6 @@ func NewGameBackend() *GameBackend {
 	return gb
 }
 
-func (gb *GameBackend) GetTurn() Side {
-	return gb.turn
-}
-
 func (gb *GameBackend) IsPossibleOperation(src, dst Point) bool {
 	return gb.IsPossibleMove(src, dst) || gb.IsPossibleAttack(src, dst)
 
@@ -53,6 +49,9 @@ func (gb *GameBackend) IsPossibleOperation(src, dst Point) bool {
 
 func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
 	if !gb.isMyTurn(src) {
+		return false
+	}
+	if gb.isBattlePresent() {
 		return false
 	}
 	possibleMoves := gb.PossibleMoves(src.X, src.Y)
@@ -114,6 +113,34 @@ func (gb *GameBackend) canAttack(x, y int) bool {
 	return false
 }
 
+func (gb *GameBackend) canMove(x, y int) bool {
+	if !gb.isOnTheBoard(x, y) {
+		return false
+	}
+	if gb.isBattlePresent() {
+		return false
+	}
+	currentCheckerSide := gb.occupiedBy(x, y)
+	if currentCheckerSide == Red {
+		if gb.isOnTheBoard(x+1, y+1) && gb.occupiedBy(x+1, y+1) == None {
+			return true
+		}
+		if gb.isOnTheBoard(x-1, y+1) && gb.occupiedBy(x-1, y+1) == None {
+			return true
+		}
+	}
+
+	if currentCheckerSide == Blue {
+		if gb.isOnTheBoard(x+1, y-1) && gb.occupiedBy(x+1, y-1) == None {
+			return true
+		}
+		if gb.isOnTheBoard(x-1, y-1) && gb.occupiedBy(x-1, y-1) == None {
+			return true
+		}
+	}
+	return false
+}
+
 func (gb *GameBackend) occupiedBy(x, y int) Side {
 	return gb.board[y][x].Side
 
@@ -131,4 +158,21 @@ func (gb *GameBackend) isOnTheBoard(x, y int) bool {
 
 func (gb *GameBackend) isMyTurn(src Point) bool {
 	return gb.turn == gb.occupiedBy(src.X, src.Y)
+}
+
+func (gb *GameBackend) isBattlePresent() bool {
+	candidates := []Point{}
+	for x := range size {
+		for y := range size {
+			if gb.board[y][x].Side == gb.turn {
+				candidates = append(candidates, Point{x, y})
+			}
+		}
+	}
+	for _, candidate := range candidates {
+		if gb.canAttack(candidate.X, candidate.Y) {
+			return true
+		}
+	}
+	return false
 }

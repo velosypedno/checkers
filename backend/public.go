@@ -26,7 +26,13 @@ func (gb *GameBackend) PossibleMoves(x, y int) []Point {
 	if gb.canAttack(x, y) {
 		return possibleMoves
 	}
-	if !gb.CanBeHighlighted(x, y) {
+	if !gb.isOnTheBoard(x, y) {
+		return possibleMoves
+	}
+	if gb.isBattlePresent() {
+		return possibleMoves
+	}
+	if gb.occupiedBy(x, y) == None {
 		return possibleMoves
 	}
 
@@ -77,11 +83,7 @@ func (gb *GameBackend) PossibleAttacks(x, y int) []Attack {
 }
 
 func (gb *GameBackend) CanBeHighlighted(x, y int) bool {
-	// Preconditions
 	if !gb.isOnTheBoard(x, y) {
-		return false
-	}
-	if gb.occupiedBy(x, y) == None {
 		return false
 	}
 
@@ -89,28 +91,7 @@ func (gb *GameBackend) CanBeHighlighted(x, y int) bool {
 		return false
 	}
 
-	// Check if can move ahead
-	currentCheckerSide := gb.occupiedBy(x, y)
-	if currentCheckerSide == Red {
-		if gb.isOnTheBoard(x+1, y+1) && gb.occupiedBy(x+1, y+1) == None {
-			return true
-		}
-		if gb.isOnTheBoard(x-1, y+1) && gb.occupiedBy(x-1, y+1) == None {
-			return true
-		}
-	}
-
-	if currentCheckerSide == Blue {
-		if gb.isOnTheBoard(x+1, y-1) && gb.occupiedBy(x+1, y-1) == None {
-			return true
-		}
-		if gb.isOnTheBoard(x-1, y-1) && gb.occupiedBy(x-1, y-1) == None {
-			return true
-		}
-	}
-
-	// Check if can attack
-	return gb.canAttack(x, y)
+	return gb.canMove(x, y) || gb.canAttack(x, y)
 }
 
 func (gb *GameBackend) GetState() GameState {
@@ -150,4 +131,5 @@ func (gb *GameBackend) Attack(src, dst Point) {
 	if !gb.canAttack(dst.X, dst.Y) {
 		gb.turn = oppSide[gb.turn]
 	}
+
 }
