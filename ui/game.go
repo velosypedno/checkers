@@ -51,6 +51,24 @@ func (g *Game) Update() error {
 		x, y := ebiten.CursorPosition()
 		xCell := (x - offsetXY - frameSizePX) / cellSizePX
 		yCell := (y - offsetXY - frameSizePX) / cellSizePX
+
+		if g.selected != nil {
+			src := backend.Point{
+				X: g.selected.x,
+				Y: g.selected.y,
+			}
+			dst := backend.Point{
+				X: xCell,
+				Y: yCell,
+			}
+			if g.gameBackend.IsPossibleMove(src, dst) {
+				g.gameBackend.Move(src, dst)
+				g.selected = nil
+				g.possibleMoves = []point{}
+				return nil
+			}
+		}
+
 		if g.gameBackend.IsMoveable(xCell, yCell) {
 			g.selected = &point{xCell, yCell}
 			possibleMoves := []point{}

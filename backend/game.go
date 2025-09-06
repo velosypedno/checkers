@@ -62,6 +62,24 @@ func (gb *GameBackend) GetState() GameState {
 	return state
 }
 
+func (gb *GameBackend) Move(src, dst Point) {
+	if !gb.IsPossibleMove(src, dst) {
+		return
+	}
+	gb.board[dst.Y][dst.X] = gb.board[src.Y][src.X]
+	gb.board[src.Y][src.X] = checker{None}
+}
+
+func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
+	possibleMoves := gb.PossibleMoves(src.X, src.Y)
+	for _, p := range possibleMoves {
+		if p.X == dst.X && p.Y == dst.Y {
+			return true
+		}
+	}
+	return false
+}
+
 func (gb *GameBackend) IsMoveable(x, y int) bool {
 	if !gb.isOnTheBoard(x, y) {
 		return false
