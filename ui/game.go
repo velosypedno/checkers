@@ -29,33 +29,32 @@ var (
 	highlightOutlineColor = color.RGBA{255, 200, 100, 180}
 )
 
-type point struct {
-	x, y int
-}
-
 type Game struct {
-	gameBackend   *backend.GameBackend
-	selected      *point
-	possibleMoves []point
+	gameBackend     *backend.GameBackend
+	selected        *backend.Point
+	possibleMoves   []backend.Point
+	possibleAttacks []backend.Attack
 }
 
 func NewGame() *Game {
 	return &Game{
 		gameBackend:   backend.NewGameBackend(),
-		possibleMoves: []point{},
+		possibleMoves: []backend.Point{},
 	}
 }
 
 func (g *Game) Update() error {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		// Step 1: Calculate position
 		x, y := ebiten.CursorPosition()
 		xCell := (x - offsetXY - frameSizePX) / cellSizePX
 		yCell := (y - offsetXY - frameSizePX) / cellSizePX
 
+		// Step 2: Check moves and attacks if a checker is already selected
 		if g.selected != nil {
 			src := backend.Point{
-				X: g.selected.x,
-				Y: g.selected.y,
+				X: g.selected.X,
+				Y: g.selected.Y,
 			}
 			dst := backend.Point{
 				X: xCell,
@@ -64,26 +63,30 @@ func (g *Game) Update() error {
 			if g.gameBackend.IsPossibleMove(src, dst) {
 				g.gameBackend.Move(src, dst)
 				g.selected = nil
-				g.possibleMoves = []point{}
-				return nil
+				g.possibleMoves = []backend.Point{}
+				g.possibleAttacks = []backend.Attack{}
+			} else if g.gameBackend.IsPossibleAttack(src, dst) {
+				g.gameBackend.Attack(src, dst)
+				g.selected = nil
+				g.possibleMoves = []backend.Point{}
+				g.possibleAttacks = []backend.Attack{}
 			}
 		}
 
-		if g.gameBackend.IsMoveable(xCell, yCell) {
-			g.selected = &point{xCell, yCell}
-			possibleMoves := []point{}
-			for _, p := range g.gameBackend.PossibleMoves(xCell, yCell) {
-				possibleMoves = append(possibleMoves, point{p.X, p.Y})
-			}
-			g.possibleMoves = possibleMoves
+		// Step 3: Select checker if possible or reboot highlighting
+		if g.gameBackend.CanBeHighlighted(xCell, yCell) {
+			g.selected = &backend.Point{X: xCell, Y: yCell}
+			g.possibleMoves = g.gameBackend.PossibleMoves(xCell, yCell)
+			g.possibleAttacks = g.gameBackend.PossibleAttacks(xCell, yCell)
 		} else {
 			g.selected = nil
-			g.possibleMoves = []point{}
+			g.possibleMoves = []backend.Point{}
+			g.possibleAttacks = []backend.Attack{}
 		}
 
 	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 		g.selected = nil
-		g.possibleMoves = []point{}
+		g.possibleMoves = []backend.Point{}
 	}
 	return nil
 }
@@ -192,8 +195,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if g.selected != nil {
 		outlineImg := ebiten.NewImage(cellSizePX, cellSizePX)
 		DrawHighlightOutline(outlineImg)
-		xOffset = float64(cellSizePX * g.selected.x)
-		yOffset = float64(cellSizePX * g.selected.y)
+		xOffset = float64(cellSizePX * g.selected.X)
+		yOffset = float64(cellSizePX * g.selected.Y)
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(xOffset, yOffset)
 		boardImg.DrawImage(outlineImg, op)
@@ -203,8 +206,18 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, point := range g.possibleMoves {
 		pointImage := ebiten.NewImage(cellSizePX, cellSizePX)
 		DrawCenterCircle(pointImage)
-		xOffset = float64(cellSizePX * point.x)
-		yOffset = float64(cellSizePX * point.y)
+		xOffset = float64(cellSizePX * point.X)
+		yOffset = float64(cellSizePX * point.Y)
+		op = &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(xOffset, yOffset)
+		boardImg.DrawImage(pointImage, op)
+	}
+
+	for _, attack := range g.possibleAttacks {
+		pointImage := ebiten.NewImage(cellSizePX, cellSizePX)
+		DrawCenterCircle(pointImage)
+		xOffset = float64(cellSizePX * attack.Move.X)
+		yOffset = float64(cellSizePX * attack.Move.Y)
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(xOffset, yOffset)
 		boardImg.DrawImage(pointImage, op)
