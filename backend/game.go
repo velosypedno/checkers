@@ -18,6 +18,10 @@ type checker struct {
 	Side Side
 }
 
+type Point struct {
+	X, Y int
+}
+
 type GameBackend struct {
 	board [8][8]checker
 }
@@ -59,15 +63,104 @@ func (gb *GameBackend) GetState() GameState {
 }
 
 func (gb *GameBackend) IsMoveable(x, y int) bool {
-	if 0 > x || x >= size {
+	if !gb.isOnTheBoard(x, y) {
 		return false
 	}
-	if 0 > y || y >= size {
+	if gb.OccupiedBy(x, y) == None {
 		return false
 	}
-	if gb.board[y][x].Side != None {
-		return true
+	currentCheckerSide := gb.OccupiedBy(x, y)
+	if currentCheckerSide == Red {
+		if gb.isOnTheBoard(x+1, y+1) && gb.OccupiedBy(x+1, y+1) == None {
+			return true
+		}
+		if gb.isOnTheBoard(x-1, y+1) && gb.OccupiedBy(x-1, y+1) == None {
+			return true
+		}
+
+		if gb.isOnTheBoard(x+1, y+1) && gb.OccupiedBy(x+1, y+1) == Blue {
+			if gb.isOnTheBoard(x+2, y+2) && gb.OccupiedBy(x+2, y+2) == None {
+				return true
+			}
+		}
+		if gb.isOnTheBoard(x-1, y+1) && gb.OccupiedBy(x-1, y+1) == Blue {
+			if gb.isOnTheBoard(x-2, y+2) && gb.OccupiedBy(x-2, y+2) == None {
+				return true
+			}
+		}
+	}
+
+	if currentCheckerSide == Blue {
+		if gb.isOnTheBoard(x+1, y-1) && gb.OccupiedBy(x+1, y-1) == None {
+			return true
+		}
+		if gb.isOnTheBoard(x-1, y-1) && gb.OccupiedBy(x-1, y-1) == None {
+			return true
+		}
+
+		if gb.isOnTheBoard(x+1, y-1) && gb.OccupiedBy(x+1, y-1) == Red {
+			if gb.isOnTheBoard(x+2, y-2) && gb.OccupiedBy(x+2, y-2) == None {
+				return true
+			}
+		}
+		if gb.isOnTheBoard(x-1, y-1) && gb.OccupiedBy(x-1, y-1) == Red {
+			if gb.isOnTheBoard(x-2, y-2) && gb.OccupiedBy(x-2, y-2) == None {
+				return true
+			}
+		}
 	}
 
 	return false
+}
+
+func (gb *GameBackend) OccupiedBy(x, y int) Side {
+	return gb.board[y][x].Side
+
+}
+
+func (gb *GameBackend) isOnTheBoard(x, y int) bool {
+	if x < 0 || x >= size {
+		return false
+	}
+	if y < 0 || y >= size {
+		return false
+	}
+	return true
+}
+
+func (gb *GameBackend) PossibleMoves(x, y int) []Point {
+	possibleMoves := []Point{}
+	if !gb.IsMoveable(x, y) {
+		return possibleMoves
+	}
+	currentCheckerSide := gb.OccupiedBy(x, y)
+	var possibleX int
+	var possibleY int
+	if currentCheckerSide == Red {
+		possibleX = x + 1
+		possibleY = y + 1
+		if gb.isOnTheBoard(possibleX, possibleY) && gb.OccupiedBy(possibleX, possibleY) == None {
+			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
+		}
+		possibleX = x - 1
+		possibleY = y + 1
+		if gb.isOnTheBoard(possibleX, possibleY) && gb.OccupiedBy(possibleX, possibleY) == None {
+			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
+		}
+	}
+
+	if currentCheckerSide == Blue {
+		possibleX = x + 1
+		possibleY = y - 1
+		if gb.isOnTheBoard(possibleX, possibleY) && gb.OccupiedBy(possibleX, possibleY) == None {
+			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
+		}
+		possibleX = x - 1
+		possibleY = y - 1
+		if gb.isOnTheBoard(possibleX, possibleY) && gb.OccupiedBy(possibleX, possibleY) == None {
+			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
+		}
+	}
+
+	return possibleMoves
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"image/color"
+	"math"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 	"github.com/velosypedno/checkers/backend"
@@ -18,6 +19,7 @@ const (
 	checkerOffsetInsideCellPX   = 10
 	checkerSizePX               = cellSizePX - 2*checkerOffsetInsideCellPX
 	highlightOutlineThicknessPX = 5
+	circleRadiusPX              = 10
 	boardSize                   = 8
 )
 
@@ -27,18 +29,20 @@ var (
 	highlightOutlineColor = color.RGBA{255, 200, 100, 180}
 )
 
-type selected struct {
+type point struct {
 	x, y int
 }
 
 type Game struct {
-	gameBackend *backend.GameBackend
-	selected    *selected
+	gameBackend   *backend.GameBackend
+	selected      *point
+	possibleMoves []point
 }
 
 func NewGame() *Game {
 	return &Game{
-		gameBackend: backend.NewGameBackend(),
+		gameBackend:   backend.NewGameBackend(),
+		possibleMoves: []point{},
 	}
 }
 
@@ -48,11 +52,20 @@ func (g *Game) Update() error {
 		xCell := (x - offsetXY - frameSizePX) / cellSizePX
 		yCell := (y - offsetXY - frameSizePX) / cellSizePX
 		if g.gameBackend.IsMoveable(xCell, yCell) {
-			g.selected = &selected{xCell, yCell}
+			g.selected = &point{xCell, yCell}
+			possibleMoves := []point{}
+			for _, p := range g.gameBackend.PossibleMoves(xCell, yCell) {
+				possibleMoves = append(possibleMoves, point{p.X, p.Y})
+			}
+			g.possibleMoves = possibleMoves
+		} else {
+			g.selected = nil
+			g.possibleMoves = []point{}
 		}
 
 	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 		g.selected = nil
+		g.possibleMoves = []point{}
 	}
 	return nil
 }
@@ -94,6 +107,26 @@ func DrawHighlightOutline(outlineImg *ebiten.Image) {
 				outlineImg.Set(x, y, highlightOutlineColor)
 			} else {
 				outlineImg.Set(x, y, color.RGBA{0, 0, 0, 0})
+			}
+		}
+	}
+}
+
+func DrawCenterCircle(circleImg *ebiten.Image) {
+	bounds := circleImg.Bounds()
+	width, height := bounds.Dx(), bounds.Dy()
+	cx, cy := float64(width)/2, float64(height)/2
+	r := float64(circleRadiusPX)
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			dx := float64(x) - cx
+			dy := float64(y) - cy
+			dist := math.Hypot(dx, dy)
+			if dist <= r {
+				circleImg.Set(x, y, highlightOutlineColor)
+			} else {
+				circleImg.Set(x, y, color.RGBA{0, 0, 0, 0})
 			}
 		}
 	}
@@ -146,6 +179,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(xOffset, yOffset)
 		boardImg.DrawImage(outlineImg, op)
+	}
+
+	// Draw possible moves
+	for _, point := range g.possibleMoves {
+		pointImage := ebiten.NewImage(cellSizePX, cellSizePX)
+		DrawCenterCircle(pointImage)
+		xOffset = float64(cellSizePX * point.x)
+		yOffset = float64(cellSizePX * point.y)
+		op = &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(xOffset, yOffset)
+		boardImg.DrawImage(pointImage, op)
 	}
 
 	// Draw board on the frame
