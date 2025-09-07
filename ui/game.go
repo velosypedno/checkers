@@ -44,7 +44,7 @@ func NewGame() *Game {
 	}
 }
 
-func (g *Game) SetNothingState() {
+func (g *Game) Nothing() {
 	g.state = Nothing
 	g.candidatesToAttack = []backend.Point{}
 	g.possibleAttacksSelected = []backend.Attack{}
@@ -53,7 +53,7 @@ func (g *Game) SetNothingState() {
 	g.selected = nil
 }
 
-func (g *Game) SetShouldAttackState() {
+func (g *Game) ShouldAttack() {
 	g.state = ShouldAttack
 	g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
 	g.possibleAttacksSelected = []backend.Attack{}
@@ -62,7 +62,7 @@ func (g *Game) SetShouldAttackState() {
 	g.selected = nil
 }
 
-func (g *Game) SetChosenToMoveState(p backend.Point) {
+func (g *Game) ChosenToMove(p backend.Point) {
 	g.state = ChosenToMove
 	g.candidatesToAttack = []backend.Point{}
 	g.possibleAttacksSelected = []backend.Attack{}
@@ -71,7 +71,7 @@ func (g *Game) SetChosenToMoveState(p backend.Point) {
 	g.locked = nil
 }
 
-func (g *Game) SetChosenToAttackState(p backend.Point) {
+func (g *Game) ChosenToAttack(p backend.Point) {
 	g.state = ChosenToAttack
 	g.candidatesToAttack = []backend.Point{}
 	g.possibleAttacksSelected = g.gameBackend.PossibleAttacks(p.X, p.Y)
@@ -80,7 +80,7 @@ func (g *Game) SetChosenToAttackState(p backend.Point) {
 	g.locked = nil
 }
 
-func (g *Game) SetLockedState() {
+func (g *Game) Locked() {
 	g.state = Locked
 	g.locked = g.gameBackend.GetLocked()
 	g.selected = g.locked
