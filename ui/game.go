@@ -13,10 +13,10 @@ type GameState int
 
 const (
 	Nothing = iota
-	Selected
+	ChosenToMove
 	Locked
 	ShouldAttack
-	CandidateChosen
+	ChosenToAttack
 )
 
 type Game struct {
@@ -27,12 +27,20 @@ type Game struct {
 	candidatesToAttack      []backend.Point
 	locked                  *backend.Point
 	state                   GameState
+
+	lastMouseLeftPressed  bool
+	lastMouseRightPressed bool
 }
 
 func NewGame() *Game {
 	return &Game{
 		gameBackend:             backend.NewGameBackend(),
 		possibleMovesOfSelected: []backend.Point{},
+		possibleAttacksSelected: []backend.Attack{},
+		selected:                nil,
+		locked:                  nil,
+		candidatesToAttack:      []backend.Point{},
+		state:                   Nothing,
 	}
 }
 

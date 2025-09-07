@@ -29,7 +29,7 @@ func (gb *GameBackend) PossibleMoves(x, y int) []Point {
 	if !gb.isOnTheBoard(x, y) {
 		return possibleMoves
 	}
-	if gb.isBattlePresent() {
+	if gb.IsBattlePresent() {
 		return possibleMoves
 	}
 	if gb.occupiedBy(x, y) == None {
@@ -157,4 +157,8 @@ func (gb *GameBackend) GetCheckersThatCanAttack() []Point {
 
 func (gb *GameBackend) GetLocked() *Point {
 	return gb.locked
+}
+
+func (gb *GameBackend) CanMove(p Point) bool {
+	return gb.canMove(p.X, p.Y)
 }

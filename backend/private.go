@@ -52,7 +52,7 @@ func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
 	if !gb.isMyTurn(src) {
 		return false
 	}
-	if gb.isBattlePresent() {
+	if gb.IsBattlePresent() {
 		return false
 	}
 	possibleMoves := gb.PossibleMoves(src.X, src.Y)
@@ -118,7 +118,11 @@ func (gb *GameBackend) canMove(x, y int) bool {
 	if !gb.isOnTheBoard(x, y) {
 		return false
 	}
-	if gb.isBattlePresent() {
+	if !(gb.turn == gb.occupiedBy(x, y)) {
+		return false
+	}
+
+	if gb.IsBattlePresent() {
 		return false
 	}
 	currentCheckerSide := gb.occupiedBy(x, y)
@@ -161,7 +165,7 @@ func (gb *GameBackend) isMyTurn(src Point) bool {
 	return gb.turn == gb.occupiedBy(src.X, src.Y)
 }
 
-func (gb *GameBackend) isBattlePresent() bool {
+func (gb *GameBackend) IsBattlePresent() bool {
 	candidates := []Point{}
 	for x := range size {
 		for y := range size {
@@ -176,4 +180,8 @@ func (gb *GameBackend) isBattlePresent() bool {
 		}
 	}
 	return false
+}
+
+func (gb *GameBackend) IsCandidateToAttack(p Point) bool {
+	return gb.canAttack(p.X, p.Y)
 }

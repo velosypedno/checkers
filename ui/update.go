@@ -6,55 +6,20 @@ import (
 )
 
 func (g *Game) Update() error {
+	leftPressed := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
+	rightPressed := ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight)
 
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		// Step 1: Calculate position
-		x, y := ebiten.CursorPosition()
-		xCell := (x - offsetXY - frameSizePX) / cellSizePX
-		yCell := (y - offsetXY - frameSizePX) / cellSizePX
+	if leftPressed && !g.lastMouseLeftPressed {
+		g.ProcessLeftClick()
+	}
 
-		// Step 2: Check moves and attacks if a checker is already selected
-		if g.selected != nil {
-			src := backend.Point{
-				X: g.selected.X,
-				Y: g.selected.Y,
-			}
-			dst := backend.Point{
-				X: xCell,
-				Y: yCell,
-			}
-			if g.gameBackend.IsPossibleMove(src, dst) {
-				g.gameBackend.Move(src, dst)
-				g.selected = nil
-				g.possibleMovesOfSelected = []backend.Point{}
-				g.possibleAttacksSelected = []backend.Attack{}
-			} else if g.gameBackend.IsPossibleAttack(src, dst) {
-				g.gameBackend.Attack(src, dst)
-				g.selected = nil
-				g.possibleMovesOfSelected = []backend.Point{}
-				g.possibleAttacksSelected = []backend.Attack{}
-			}
-		}
-
-		// Step 3: Select checker if possible or reboot highlighting
-		if g.gameBackend.CanBeHighlighted(xCell, yCell) {
-			g.selected = &backend.Point{X: xCell, Y: yCell}
-			g.possibleMovesOfSelected = g.gameBackend.PossibleMoves(xCell, yCell)
-			g.possibleAttacksSelected = g.gameBackend.PossibleAttacks(xCell, yCell)
-			g.candidatesToAttack = []backend.Point{}
-		} else {
-			g.selected = nil
-			g.possibleMovesOfSelected = []backend.Point{}
-			g.possibleAttacksSelected = []backend.Attack{}
-			g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
-		}
-
-	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+	if rightPressed && !g.lastMouseRightPressed {
 		g.ProcessRightClick()
 	}
-	if g.selected == nil {
-		g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
-	}
+
+	g.lastMouseLeftPressed = leftPressed
+	g.lastMouseRightPressed = rightPressed
+
 	return nil
 }
 
@@ -62,18 +27,44 @@ func (g *Game) ProcessLeftClick() {
 	x, y := ebiten.CursorPosition()
 	xCell := (x - offsetXY - frameSizePX) / cellSizePX
 	yCell := (y - offsetXY - frameSizePX) / cellSizePX
+	p := backend.Point{X: xCell, Y: yCell}
 
 	switch g.state {
 	case Nothing:
-		if g.gameBackend.CanBeHighlighted(xCell, yCell) {
-
+		if g.gameBackend.CanMove(p) {
+			g.SetChosenToMoveState(p)
 		}
-	case Selected:
+	case ChosenToMove:
+		if !g.gameBackend.IsPossibleMove(*g.selected, p) {
+			g.SetNothingState()
+			break
+		}
+		g.gameBackend.Move(*g.selected, p)
 		g.SetNothingState()
-	case Locked:
+
+		// Should be extracted to ProcessNothingHappens
+		if g.gameBackend.IsBattlePresent() {
+			g.SetShouldAttackState()
+		} else {
+			g.SetNothingState()
+		}
 	case ShouldAttack:
-	case CandidateChosen:
-		g.SetShouldAttack()
+		if g.gameBackend.IsCandidateToAttack(p) {
+			g.SetChosenToAttackState(p)
+		}
+	case ChosenToAttack:
+		if g.gameBackend.IsPossibleAttack(*g.selected, p) {
+			g.gameBackend.Attack(*g.selected, p)
+		} else {
+			g.SetShouldAttackState()
+		}
+
+		// Should be extracted to ProcessNothingHappens
+		if g.gameBackend.IsBattlePresent() {
+			g.SetShouldAttackState()
+		} else {
+			g.SetNothingState()
+		}
 	}
 }
 
@@ -81,12 +72,11 @@ func (g *Game) ProcessRightClick() {
 	switch g.state {
 	case Nothing:
 		g.SetNothingState()
-	case Selected:
+	case ChosenToMove:
 		g.SetNothingState()
-	case Locked:
 	case ShouldAttack:
-	case CandidateChosen:
-		g.SetShouldAttack()
+	case ChosenToAttack:
+		g.SetShouldAttackState()
 	}
 }
 
@@ -99,11 +89,29 @@ func (g *Game) SetNothingState() {
 	g.selected = nil
 }
 
-func (g *Game) SetShouldAttack() {
+func (g *Game) SetShouldAttackState() {
 	g.state = ShouldAttack
 	g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
 	g.possibleAttacksSelected = []backend.Attack{}
 	g.possibleMovesOfSelected = []backend.Point{}
 	g.locked = nil
 	g.selected = nil
+}
+
+func (g *Game) SetChosenToMoveState(p backend.Point) {
+	g.state = ChosenToMove
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleAttacksSelected = []backend.Attack{}
+	g.possibleMovesOfSelected = g.gameBackend.PossibleMoves(p.X, p.Y)
+	g.selected = &p
+	g.locked = nil
+}
+
+func (g *Game) SetChosenToAttackState(p backend.Point) {
+	g.state = ChosenToAttack
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleAttacksSelected = g.gameBackend.PossibleAttacks(p.X, p.Y)
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.selected = &p
+	g.locked = nil
 }
