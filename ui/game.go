@@ -44,6 +44,47 @@ func NewGame() *Game {
 	}
 }
 
-func (g *Game) Layout(outsideWith, outsideHeight int) (int, int) {
-	return WindowWithPX, WindowHighPX
+func (g *Game) SetNothingState() {
+	g.state = Nothing
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleAttacksSelected = []backend.Attack{}
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.locked = nil
+	g.selected = nil
+}
+
+func (g *Game) SetShouldAttackState() {
+	g.state = ShouldAttack
+	g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
+	g.possibleAttacksSelected = []backend.Attack{}
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.locked = nil
+	g.selected = nil
+}
+
+func (g *Game) SetChosenToMoveState(p backend.Point) {
+	g.state = ChosenToMove
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleAttacksSelected = []backend.Attack{}
+	g.possibleMovesOfSelected = g.gameBackend.PossibleMoves(p.X, p.Y)
+	g.selected = &p
+	g.locked = nil
+}
+
+func (g *Game) SetChosenToAttackState(p backend.Point) {
+	g.state = ChosenToAttack
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleAttacksSelected = g.gameBackend.PossibleAttacks(p.X, p.Y)
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.selected = &p
+	g.locked = nil
+}
+
+func (g *Game) SetLockedState() {
+	g.state = Locked
+	g.locked = g.gameBackend.GetLocked()
+	g.selected = g.locked
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.possibleAttacksSelected = g.gameBackend.PossibleAttacks(g.selected.X, g.selected.Y)
 }

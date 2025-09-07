@@ -193,3 +193,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(xOffset, yOffset)
 	screen.DrawImage(frameImg, op)
 }
+
+func (g *Game) Layout(outsideWith, outsideHeight int) (int, int) {
+	return WindowWithPX, WindowHighPX
+}

@@ -130,9 +130,9 @@ func (gb *GameBackend) Attack(src, dst Point) {
 	gb.board[src.Y][src.X] = checker{None}
 	if !gb.canAttack(dst.X, dst.Y) {
 		gb.turn = oppSide[gb.turn]
-		gb.locked = &dst
-	} else {
 		gb.locked = nil
+	} else {
+		gb.locked = &dst
 	}
 
 }
@@ -157,6 +157,10 @@ func (gb *GameBackend) GetCheckersThatCanAttack() []Point {
 
 func (gb *GameBackend) GetLocked() *Point {
 	return gb.locked
+}
+
+func (gb *GameBackend) IsLocked() bool {
+	return gb.GetLocked() != nil
 }
 
 func (gb *GameBackend) CanMove(p Point) bool {

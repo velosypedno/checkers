@@ -100,7 +100,7 @@ func (gb *GameBackend) candidatesToAttack(p Point) []Attack {
 
 func (gb *GameBackend) canAttack(x, y int) bool {
 	curSide := gb.occupiedBy(x, y)
-	if curSide == None {
+	if curSide != gb.turn {
 		return false
 	}
 	candidates := gb.candidatesToAttack(Point{x, y})
