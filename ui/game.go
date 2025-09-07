@@ -9,12 +9,24 @@ const (
 	WindowHighPX = 700
 )
 
+type GameState int
+
+const (
+	Nothing = iota
+	Selected
+	Locked
+	ShouldAttack
+	CandidateChosen
+)
+
 type Game struct {
 	gameBackend             *backend.GameBackend
 	selected                *backend.Point
 	possibleMovesOfSelected []backend.Point
 	possibleAttacksSelected []backend.Attack
 	candidatesToAttack      []backend.Point
+	locked                  *backend.Point
+	state                   GameState
 }
 
 func NewGame() *Game {

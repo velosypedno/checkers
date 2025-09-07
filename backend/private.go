@@ -16,8 +16,9 @@ type checker struct {
 }
 
 type GameBackend struct {
-	board [8][8]checker
-	turn  Side
+	board  [8][8]checker
+	turn   Side
+	locked *Point
 }
 
 func NewGameBackend() *GameBackend {

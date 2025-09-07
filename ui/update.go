@@ -6,6 +6,7 @@ import (
 )
 
 func (g *Game) Update() error {
+
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		// Step 1: Calculate position
 		x, y := ebiten.CursorPosition()
@@ -49,12 +50,60 @@ func (g *Game) Update() error {
 		}
 
 	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
-		g.selected = nil
-		g.possibleMovesOfSelected = []backend.Point{}
-		g.possibleAttacksSelected = []backend.Attack{}
+		g.ProcessRightClick()
 	}
 	if g.selected == nil {
 		g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
 	}
 	return nil
+}
+
+func (g *Game) ProcessLeftClick() {
+	x, y := ebiten.CursorPosition()
+	xCell := (x - offsetXY - frameSizePX) / cellSizePX
+	yCell := (y - offsetXY - frameSizePX) / cellSizePX
+
+	switch g.state {
+	case Nothing:
+		if g.gameBackend.CanBeHighlighted(xCell, yCell) {
+
+		}
+	case Selected:
+		g.SetNothingState()
+	case Locked:
+	case ShouldAttack:
+	case CandidateChosen:
+		g.SetShouldAttack()
+	}
+}
+
+func (g *Game) ProcessRightClick() {
+	switch g.state {
+	case Nothing:
+		g.SetNothingState()
+	case Selected:
+		g.SetNothingState()
+	case Locked:
+	case ShouldAttack:
+	case CandidateChosen:
+		g.SetShouldAttack()
+	}
+}
+
+func (g *Game) SetNothingState() {
+	g.state = Nothing
+	g.candidatesToAttack = []backend.Point{}
+	g.possibleAttacksSelected = []backend.Attack{}
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.locked = nil
+	g.selected = nil
+}
+
+func (g *Game) SetShouldAttack() {
+	g.state = ShouldAttack
+	g.candidatesToAttack = g.gameBackend.GetCheckersThatCanAttack()
+	g.possibleAttacksSelected = []backend.Attack{}
+	g.possibleMovesOfSelected = []backend.Point{}
+	g.locked = nil
+	g.selected = nil
 }
