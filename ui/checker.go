@@ -44,11 +44,9 @@ func drawChecker(size int, outer color.Color) *ebiten.Image {
 }
 
 func GetBlueChecker(size int) *ebiten.Image {
-	outer := color.RGBA{0, 64, 160, 255}
-	return drawChecker(size, outer)
+	return drawChecker(size, BlueCheckerColor)
 }
 
 func GetRedChecker(size int) *ebiten.Image {
-	outer := color.RGBA{160, 32, 32, 255}
-	return drawChecker(size, outer)
+	return drawChecker(size, RedCheckerColor)
 }

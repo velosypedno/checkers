@@ -133,3 +133,21 @@ func (gb *GameBackend) Attack(src, dst Point) {
 	}
 
 }
+
+func (gb *GameBackend) GetCheckersThatCanAttack() []Point {
+	candidates := []Point{}
+	for x := range size {
+		for y := range size {
+			if gb.board[y][x].Side == gb.turn {
+				candidates = append(candidates, Point{x, y})
+			}
+		}
+	}
+	checkersThatCanAttack := []Point{}
+	for _, candidate := range candidates {
+		if gb.canAttack(candidate.X, candidate.Y) {
+			checkersThatCanAttack = append(checkersThatCanAttack, candidate)
+		}
+	}
+	return checkersThatCanAttack
+}
