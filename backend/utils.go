@@ -51,11 +51,33 @@ func (gb *GameBackend) redCheckerMoves(p Point) []Point {
 	}
 }
 
+func (gb *GameBackend) redCheckerPossibleMoves(p Point) []Point {
+	possibleMoves := []Point{}
+	moves := gb.redCheckerMoves(p)
+	for _, m := range moves {
+		if gb.onBoard(m) && gb.occupiedBy(m) == None {
+			possibleMoves = append(possibleMoves, m)
+		}
+	}
+	return possibleMoves
+}
+
 func (gb *GameBackend) blueCheckerMoves(p Point) []Point {
 	return []Point{
 		{p.X + 1, p.Y - 1},
 		{p.X - 1, p.Y - 1},
 	}
+}
+
+func (gb *GameBackend) blueCheckerPossibleMoves(p Point) []Point {
+	possibleMoves := []Point{}
+	moves := gb.blueCheckerMoves(p)
+	for _, m := range moves {
+		if gb.onBoard(m) && gb.occupiedBy(m) == None {
+			possibleMoves = append(possibleMoves, m)
+		}
+	}
+	return possibleMoves
 }
 
 func (gb *GameBackend) queenPossibleMoves(p Point) []Point {
@@ -93,4 +115,18 @@ func (gb *GameBackend) queenPossibleMoves(p Point) []Point {
 		}
 	}
 	return possibleMoves
+}
+
+func (gb *GameBackend) currentFigurePossibleMoves(p Point) []Point {
+	curSide := gb.occupiedBy(p)
+	if gb.isQueen(p) {
+		return gb.queenPossibleMoves(p)
+	}
+	if curSide == Red {
+		return gb.redCheckerPossibleMoves(p)
+	}
+	if curSide == Blue {
+		return gb.blueCheckerPossibleMoves(p)
+	}
+	return []Point{}
 }

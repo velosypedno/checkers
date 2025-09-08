@@ -20,40 +20,20 @@ const (
 	Blue
 )
 
-func (gb *GameBackend) PossibleMoves(x, y int) []Point {
-	// Preconditions
-	possibleMoves := []Point{}
-	p := Point{x, y}
+func (gb *GameBackend) AllowedMoves(p Point) []Point {
 	if !gb.onBoard(p) {
-		return possibleMoves
+		return []Point{}
 	}
 	if !gb.isMyTurn(p) {
-		return possibleMoves
+		return []Point{}
 	}
 	if gb.IsBattlePresent() {
-		return possibleMoves
+		return []Point{}
 	}
 	if gb.occupiedBy(p) == None {
-		return possibleMoves
+		return []Point{}
 	}
-	var candidates []Point
-	curSide := gb.occupiedBy(p)
-	if gb.isQueen(p) {
-		return append(possibleMoves, gb.queenPossibleMoves(p)...)
-	}
-	if curSide == Red {
-		candidates = gb.redCheckerMoves(p)
-	}
-	if curSide == Blue {
-		candidates = gb.blueCheckerMoves(p)
-	}
-
-	for _, c := range candidates {
-		if gb.onBoard(c) && gb.occupiedBy(c) == None {
-			possibleMoves = append(possibleMoves, c)
-		}
-	}
-	return possibleMoves
+	return gb.currentFigurePossibleMoves(p)
 }
 
 func (gb *GameBackend) PossibleAttacks(x, y int) []Attack {
@@ -142,5 +122,5 @@ func (gb *GameBackend) IsLocked() bool {
 }
 
 func (gb *GameBackend) CanMove(p Point) bool {
-	return gb.canMove(p.X, p.Y)
+	return gb.canMove(p)
 }

@@ -66,7 +66,7 @@ func (g *Game) ChosenToMove(p backend.Point) {
 	g.state = ChosenToMove
 	g.candidatesToAttack = []backend.Point{}
 	g.possibleAttacksSelected = []backend.Attack{}
-	g.possibleMovesOfSelected = g.gameBackend.PossibleMoves(p.X, p.Y)
+	g.possibleMovesOfSelected = g.gameBackend.AllowedMoves(p)
 	g.selected = &p
 	g.locked = nil
 }

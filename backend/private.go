@@ -51,8 +51,8 @@ func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
 	if gb.IsBattlePresent() {
 		return false
 	}
-	possibleMoves := gb.PossibleMoves(src.X, src.Y)
-	for _, p := range possibleMoves {
+	allowedMoves := gb.AllowedMoves(src)
+	for _, p := range allowedMoves {
 		if p.X == dst.X && p.Y == dst.Y {
 			return true
 		}
@@ -112,8 +112,8 @@ func (gb *GameBackend) canAttack(x, y int) bool {
 	return false
 }
 
-func (gb *GameBackend) canMove(x, y int) bool {
-	return len(gb.PossibleMoves(x, y)) > 0
+func (gb *GameBackend) canMove(p Point) bool {
+	return len(gb.AllowedMoves(p)) > 0
 }
 
 func (gb *GameBackend) IsBattlePresent() bool {
