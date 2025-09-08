@@ -15,13 +15,19 @@ func lighten(c color.Color, fraction float64) color.Color {
 	return color.RGBA{uint8(R), uint8(G), uint8(B), uint8(a >> 8)}
 }
 
-func drawChecker(size int, outer color.Color) *ebiten.Image {
+func drawChecker(size int, outer color.Color, queen bool) *ebiten.Image {
 	img := ebiten.NewImage(size, size)
 
 	cx, cy := float64(size)/2, float64(size)/2
 	outerR := float64(size) * 0.5
 	innerR := outerR * 0.62
-	inner := lighten(outer, 0.4)
+
+	var inner color.Color
+	if queen {
+		inner = color.RGBA{255, 200, 100, 180}
+	} else {
+		inner = lighten(outer, 0.4)
+	}
 
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
@@ -43,10 +49,10 @@ func drawChecker(size int, outer color.Color) *ebiten.Image {
 	return img
 }
 
-func GetBlueChecker(size int) *ebiten.Image {
-	return drawChecker(size, BlueCheckerColor)
+func GetBlueChecker(size int, queen bool) *ebiten.Image {
+	return drawChecker(size, BlueCheckerColor, queen)
 }
 
-func GetRedChecker(size int) *ebiten.Image {
-	return drawChecker(size, RedCheckerColor)
+func GetRedChecker(size int, queen bool) *ebiten.Image {
+	return drawChecker(size, RedCheckerColor, queen)
 }

@@ -117,11 +117,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for i := 0; i < boardSize; i++ {
 		for j := 0; j < boardSize; j++ {
 			var checker *ebiten.Image
-			side := stateOfBoard[i][j]
-			if side == backend.Red {
-				checker = GetRedChecker(checkerSizePX)
-			} else if side == backend.Blue {
-				checker = GetBlueChecker(checkerSizePX)
+			c := stateOfBoard[i][j]
+			if c.Side == backend.Red {
+				checker = GetRedChecker(checkerSizePX, c.IsQueen)
+			} else if c.Side == backend.Blue {
+				checker = GetBlueChecker(checkerSizePX, c.IsQueen)
 			} else {
 				continue
 			}

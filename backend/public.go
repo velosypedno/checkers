@@ -1,7 +1,7 @@
 package backend
 
 type GameState struct {
-	Board [8][8]Side
+	Board [8][8]Checker
 }
 
 type Point struct {
@@ -23,84 +23,57 @@ const (
 func (gb *GameBackend) PossibleMoves(x, y int) []Point {
 	// Preconditions
 	possibleMoves := []Point{}
-	if gb.canAttack(x, y) {
+	p := Point{x, y}
+	if !gb.onBoard(p) {
 		return possibleMoves
 	}
-	if !gb.isOnTheBoard(x, y) {
+	if !gb.isMyTurn(p) {
 		return possibleMoves
 	}
 	if gb.IsBattlePresent() {
 		return possibleMoves
 	}
-	if gb.occupiedBy(x, y) == None {
+	if gb.occupiedBy(p) == None {
 		return possibleMoves
 	}
-
-	// Check for possible moves
-	curSide := gb.occupiedBy(x, y)
-	var possibleX int
-	var possibleY int
+	var candidates []Point
+	curSide := gb.occupiedBy(p)
+	if gb.isQueen(p) {
+		return append(possibleMoves, gb.queenPossibleMoves(p)...)
+	}
 	if curSide == Red {
-		possibleX = x + 1
-		possibleY = y + 1
-		if gb.isOnTheBoard(possibleX, possibleY) && gb.occupiedBy(possibleX, possibleY) == None {
-			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
-		}
-		possibleX = x - 1
-		possibleY = y + 1
-		if gb.isOnTheBoard(possibleX, possibleY) && gb.occupiedBy(possibleX, possibleY) == None {
-			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
-		}
+		candidates = gb.redCheckerMoves(p)
+	}
+	if curSide == Blue {
+		candidates = gb.blueCheckerMoves(p)
 	}
 
-	if curSide == Blue {
-		possibleX = x + 1
-		possibleY = y - 1
-		if gb.isOnTheBoard(possibleX, possibleY) && gb.occupiedBy(possibleX, possibleY) == None {
-			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
-		}
-		possibleX = x - 1
-		possibleY = y - 1
-		if gb.isOnTheBoard(possibleX, possibleY) && gb.occupiedBy(possibleX, possibleY) == None {
-			possibleMoves = append(possibleMoves, Point{possibleX, possibleY})
+	for _, c := range candidates {
+		if gb.onBoard(c) && gb.occupiedBy(c) == None {
+			possibleMoves = append(possibleMoves, c)
 		}
 	}
 	return possibleMoves
 }
 
 func (gb *GameBackend) PossibleAttacks(x, y int) []Attack {
-	curSide := gb.occupiedBy(x, y)
+	p := Point{x, y}
+	curSide := gb.occupiedBy(p)
 	attacks := []Attack{}
-	candidates := gb.candidatesToAttack(Point{x, y})
+	candidates := gb.checkerAttacks(p)
 	for _, c := range candidates {
-		if gb.isOnTheBoard(c.Move.X, c.Move.Y) &&
-			gb.occupiedBy(c.Attack.X, c.Attack.Y) == oppSide[curSide] &&
-			gb.occupiedBy(c.Move.X, c.Move.Y) == None {
+		if gb.onBoard(c.Move) &&
+			gb.occupiedBy(c.Attack) == oppSide[curSide] &&
+			gb.occupiedBy(c.Move) == None {
 			attacks = append(attacks, c)
 		}
 	}
 	return attacks
 }
 
-func (gb *GameBackend) CanBeHighlighted(x, y int) bool {
-	if !gb.isOnTheBoard(x, y) {
-		return false
-	}
-
-	if !gb.isMyTurn(Point{x, y}) {
-		return false
-	}
-
-	return gb.canMove(x, y) || gb.canAttack(x, y)
-}
-
 func (gb *GameBackend) GetState() GameState {
 	state := GameState{}
-	for row := 0; row < size; row++ {
-		for col := 0; col < size; col++ {
-			state.Board[row][col] = gb.board[row][col].Side
-		}
-	}
+	state.Board = gb.board
 	return state
 }
 
@@ -108,9 +81,11 @@ func (gb *GameBackend) Move(src, dst Point) {
 	if !gb.IsPossibleMove(src, dst) {
 		return
 	}
+	curSide := gb.turn
 	gb.board[dst.Y][dst.X] = gb.board[src.Y][src.X]
-	gb.board[src.Y][src.X] = checker{None}
-	gb.turn = oppSide[gb.turn]
+	gb.board[src.Y][src.X] = Checker{None, false}
+	gb.TryToBecameQueen(dst)
+	gb.turn = oppSide[curSide]
 }
 
 func (gb *GameBackend) Attack(src, dst Point) {
@@ -124,12 +99,15 @@ func (gb *GameBackend) Attack(src, dst Point) {
 			chosenAttack = pa
 		}
 	}
+	curSide := gb.turn
 	captured := chosenAttack.Attack
-	gb.board[captured.Y][captured.X] = checker{None}
+	gb.board[captured.Y][captured.X] = Checker{None, false}
 	gb.board[dst.Y][dst.X] = gb.board[src.Y][src.X]
-	gb.board[src.Y][src.X] = checker{None}
+	gb.board[src.Y][src.X] = Checker{None, false}
+	gb.TryToBecameQueen(dst)
+
 	if !gb.canAttack(dst.X, dst.Y) {
-		gb.turn = oppSide[gb.turn]
+		gb.turn = oppSide[curSide]
 		gb.locked = nil
 	} else {
 		gb.locked = &dst

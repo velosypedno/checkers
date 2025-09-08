@@ -11,12 +11,13 @@ var oppSide = map[Side]Side{
 	Red:  Blue,
 }
 
-type checker struct {
-	Side Side
+type Checker struct {
+	Side    Side
+	IsQueen bool
 }
 
 type GameBackend struct {
-	board  [8][8]checker
+	board  [8][8]Checker
 	turn   Side
 	locked *Point
 }
@@ -27,7 +28,7 @@ func NewGameBackend() *GameBackend {
 	for row := 0; row < redLine; row++ {
 		for col := 0; col < size; col++ {
 			if (row+col)%2 == 1 {
-				gb.board[row][col] = checker{Side: Red}
+				gb.board[row][col] = Checker{Side: Red}
 			}
 		}
 	}
@@ -35,17 +36,12 @@ func NewGameBackend() *GameBackend {
 	for row := blueLine; row < size; row++ {
 		for col := 0; col < size; col++ {
 			if (row+col)%2 == 1 {
-				gb.board[row][col] = checker{Side: Blue}
+				gb.board[row][col] = Checker{Side: Blue}
 			}
 		}
 	}
 
 	return gb
-}
-
-func (gb *GameBackend) IsPossibleOperation(src, dst Point) bool {
-	return gb.IsPossibleMove(src, dst) || gb.IsPossibleAttack(src, dst)
-
 }
 
 func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
@@ -64,6 +60,29 @@ func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
 	return false
 }
 
+func (gb *GameBackend) TryToBecameQueen(p Point) {
+	curSide := gb.occupiedBy(p)
+	if curSide == None {
+		return
+	}
+	if curSide == Red {
+		if p.Y == size-1 {
+			gb.board[p.Y][p.X].IsQueen = true
+			gb.turn = oppSide[curSide]
+			gb.locked = nil
+		}
+
+	}
+
+	if curSide == Blue {
+		if p.Y == 0 {
+			gb.board[p.Y][p.X].IsQueen = true
+			gb.turn = oppSide[curSide]
+			gb.locked = nil
+		}
+	}
+}
+
 func (gb *GameBackend) IsPossibleAttack(src, dst Point) bool {
 	if !gb.isMyTurn(src) {
 		return false
@@ -77,37 +96,16 @@ func (gb *GameBackend) IsPossibleAttack(src, dst Point) bool {
 	return false
 }
 
-func (gb *GameBackend) candidatesToAttack(p Point) []Attack {
-	attacks := []Attack{}
-	attacks = append(attacks, Attack{
-		Attack: Point{p.X + 1, p.Y + 1},
-		Move:   Point{p.X + 2, p.Y + 2},
-	})
-	attacks = append(attacks, Attack{
-		Attack: Point{p.X - 1, p.Y + 1},
-		Move:   Point{p.X - 2, p.Y + 2},
-	})
-	attacks = append(attacks, Attack{
-		Attack: Point{p.X + 1, p.Y - 1},
-		Move:   Point{p.X + 2, p.Y - 2},
-	})
-	attacks = append(attacks, Attack{
-		Attack: Point{p.X - 1, p.Y - 1},
-		Move:   Point{p.X - 2, p.Y - 2},
-	})
-	return attacks
-}
-
 func (gb *GameBackend) canAttack(x, y int) bool {
-	curSide := gb.occupiedBy(x, y)
+	curSide := gb.occupiedBy(Point{x, y})
 	if curSide != gb.turn {
 		return false
 	}
-	candidates := gb.candidatesToAttack(Point{x, y})
+	candidates := gb.checkerAttacks(Point{x, y})
 	for _, c := range candidates {
-		if gb.isOnTheBoard(c.Move.X, c.Move.Y) &&
-			gb.occupiedBy(c.Attack.X, c.Attack.Y) == oppSide[curSide] &&
-			gb.occupiedBy(c.Move.X, c.Move.Y) == None {
+		if gb.onBoard(c.Move) &&
+			gb.occupiedBy(c.Attack) == oppSide[curSide] &&
+			gb.occupiedBy(c.Move) == None {
 			return true
 		}
 	}
@@ -115,54 +113,7 @@ func (gb *GameBackend) canAttack(x, y int) bool {
 }
 
 func (gb *GameBackend) canMove(x, y int) bool {
-	if !gb.isOnTheBoard(x, y) {
-		return false
-	}
-	if !(gb.turn == gb.occupiedBy(x, y)) {
-		return false
-	}
-
-	if gb.IsBattlePresent() {
-		return false
-	}
-	currentCheckerSide := gb.occupiedBy(x, y)
-	if currentCheckerSide == Red {
-		if gb.isOnTheBoard(x+1, y+1) && gb.occupiedBy(x+1, y+1) == None {
-			return true
-		}
-		if gb.isOnTheBoard(x-1, y+1) && gb.occupiedBy(x-1, y+1) == None {
-			return true
-		}
-	}
-
-	if currentCheckerSide == Blue {
-		if gb.isOnTheBoard(x+1, y-1) && gb.occupiedBy(x+1, y-1) == None {
-			return true
-		}
-		if gb.isOnTheBoard(x-1, y-1) && gb.occupiedBy(x-1, y-1) == None {
-			return true
-		}
-	}
-	return false
-}
-
-func (gb *GameBackend) occupiedBy(x, y int) Side {
-	return gb.board[y][x].Side
-
-}
-
-func (gb *GameBackend) isOnTheBoard(x, y int) bool {
-	if x < 0 || x >= size {
-		return false
-	}
-	if y < 0 || y >= size {
-		return false
-	}
-	return true
-}
-
-func (gb *GameBackend) isMyTurn(src Point) bool {
-	return gb.turn == gb.occupiedBy(src.X, src.Y)
+	return len(gb.PossibleMoves(x, y)) > 0
 }
 
 func (gb *GameBackend) IsBattlePresent() bool {
@@ -183,5 +134,5 @@ func (gb *GameBackend) IsBattlePresent() bool {
 }
 
 func (gb *GameBackend) IsCandidateToAttack(p Point) bool {
-	return gb.canAttack(p.X, p.Y)
+	return gb.onBoard(p) && gb.canAttack(p.X, p.Y)
 }
