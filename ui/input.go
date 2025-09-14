@@ -5,6 +5,14 @@ import (
 	"github.com/velosypedno/checkers/backend"
 )
 
+func (g *Game) isClickOnStartButton(x, y int) bool {
+	buttonX := (WindowWithPX - startButtonWidthPX) / 2
+	buttonY := (WindowHighPX - startButtonHeightPX) / 2
+
+	return x >= buttonX && x <= buttonX+startButtonWidthPX &&
+		y >= buttonY && y <= buttonY+startButtonHeightPX
+}
+
 func (g *Game) ProcessLeftClick() {
 	x, y := ebiten.CursorPosition()
 	xCell := (x - offsetXY - frameSizePX) / cellSizePX
@@ -13,8 +21,10 @@ func (g *Game) ProcessLeftClick() {
 
 	switch g.state {
 	case StartScreen:
-		// Transition to Nothing state to start the game
-		g.Nothing()
+		// Transition to Nothing state only if clicked on start button
+		if g.isClickOnStartButton(x, y) {
+			g.Nothing()
+		}
 	case Nothing:
 		if g.gameBackend.CanMove(p) {
 			g.ChosenToMove(p)
@@ -60,10 +70,13 @@ func (g *Game) ProcessLeftClick() {
 }
 
 func (g *Game) ProcessRightClick() {
+	x, y := ebiten.CursorPosition()
 	switch g.state {
 	case StartScreen:
-		// Transition to Nothing state to start the game
-		g.Nothing()
+		// Transition to Nothing state only if clicked on start button
+		if g.isClickOnStartButton(x, y) {
+			g.Nothing()
+		}
 	case ChosenToMove:
 		// Transition to Nothing
 		g.Nothing()

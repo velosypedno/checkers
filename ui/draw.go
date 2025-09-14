@@ -5,7 +5,9 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 	"github.com/velosypedno/checkers/backend"
+	"golang.org/x/image/font/basicfont"
 )
 
 const (
@@ -20,6 +22,8 @@ const (
 	possibleSelectOutlineThicknessPX = 5
 	circleRadiusPX                   = 10
 	boardSize                        = 8
+	startButtonWidthPX               = 200
+	startButtonHeightPX              = 60
 )
 
 func DrawFrame(frameImg *ebiten.Image) {
@@ -99,12 +103,50 @@ func DrawCenterCircle(circleImg *ebiten.Image) {
 	}
 }
 
+func DrawStartButton(buttonImg *ebiten.Image) {
+	// Fill button background
+	buttonImg.Fill(StartButtonColor)
+
+	// Draw button border
+	bounds := buttonImg.Bounds()
+	width, height := bounds.Dx(), bounds.Dy()
+
+	// Draw border
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if y < 2 || y >= height-2 || x < 2 || x >= width-2 {
+				buttonImg.Set(x, y, color.RGBA{0, 0, 0, 255}) // Black border
+			}
+		}
+	}
+
+	// Draw text "START"
+	face := basicfont.Face7x13
+	textStr := "START"
+	textBounds := text.BoundString(face, textStr)
+	textX := (width - textBounds.Dx()) / 2
+	textY := (height + textBounds.Dy()) / 2
+
+	text.Draw(buttonImg, textStr, face, textX, textY, StartButtonTextColor)
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw background
 	screen.Fill(GameBackgroundColor)
 
-	// If in StartScreen state, don't draw the board and pieces
+	// If in StartScreen state, draw start button
 	if g.state == StartScreen {
+		// Create start button
+		buttonImg := ebiten.NewImage(startButtonWidthPX, startButtonHeightPX)
+		DrawStartButton(buttonImg)
+
+		// Position button in center of screen
+		buttonX := (WindowWithPX - startButtonWidthPX) / 2
+		buttonY := (WindowHighPX - startButtonHeightPX) / 2
+
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(buttonX), float64(buttonY))
+		screen.DrawImage(buttonImg, op)
 		return
 	}
 
