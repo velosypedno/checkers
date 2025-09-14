@@ -14,11 +14,50 @@ type Attack struct {
 
 type Side int
 
+type Checker struct {
+	Side    Side
+	IsQueen bool
+}
+
+type GameBackend struct {
+	board  [8][8]Checker
+	turn   Side
+	locked *Point
+}
+
+const (
+	size     = 8
+	redLine  = 3
+	blueLine = 5
+)
+
 const (
 	None Side = iota
 	Red
 	Blue
 )
+
+func NewGameBackend() *GameBackend {
+	gb := &GameBackend{turn: Blue}
+
+	for row := 0; row < redLine; row++ {
+		for col := 0; col < size; col++ {
+			if (row+col)%2 == 1 {
+				gb.board[row][col] = Checker{Side: Red}
+			}
+		}
+	}
+
+	for row := blueLine; row < size; row++ {
+		for col := 0; col < size; col++ {
+			if (row+col)%2 == 1 {
+				gb.board[row][col] = Checker{Side: Blue}
+			}
+		}
+	}
+
+	return gb
+}
 
 func (gb *GameBackend) AllowedMoves(p Point) []Point {
 	if !gb.onBoard(p) {
@@ -76,7 +115,7 @@ func (gb *GameBackend) Attack(src, dst Point) {
 	gb.board[src.Y][src.X] = Checker{None, false}
 	gb.tryToBecameQueen(dst)
 
-	if !gb.canAttack(dst.X, dst.Y) {
+	if !gb.canAttack(dst) {
 		gb.turn = oppSide[curSide]
 		gb.locked = nil
 	} else {
@@ -96,7 +135,7 @@ func (gb *GameBackend) GetCheckersThatCanAttack() []Point {
 	}
 	checkersThatCanAttack := []Point{}
 	for _, candidate := range candidates {
-		if gb.canAttack(candidate.X, candidate.Y) {
+		if gb.canAttack(candidate) {
 			checkersThatCanAttack = append(checkersThatCanAttack, candidate)
 		}
 	}
@@ -113,4 +152,86 @@ func (gb *GameBackend) IsLocked() bool {
 
 func (gb *GameBackend) CanMove(p Point) bool {
 	return gb.canMove(p)
+}
+
+func (gb *GameBackend) IsBattlePresent() bool {
+	candidates := []Point{}
+	for x := range size {
+		for y := range size {
+			if gb.board[y][x].Side == gb.turn {
+				candidates = append(candidates, Point{x, y})
+			}
+		}
+	}
+	for _, candidate := range candidates {
+		if gb.canAttack(candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func (gb *GameBackend) IsCandidateToAttack(p Point) bool {
+	return gb.onBoard(p) && gb.canAttack(p)
+}
+
+func (gb *GameBackend) IsPossibleAttack(src, dst Point) bool {
+	if !gb.onBoard(src) || !gb.onBoard(dst) {
+		return false
+	}
+	if !gb.isMyTurn(src) {
+		return false
+	}
+	if !gb.canAttack(src) {
+		return false
+	}
+	possibleAttacks := gb.PossibleAttacks(src.X, src.Y)
+	for _, p := range possibleAttacks {
+		if p.Move.X == dst.X && p.Move.Y == dst.Y {
+			return true
+		}
+	}
+	return false
+}
+
+func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
+	if !gb.onBoard(src) || !gb.onBoard(dst) {
+		return false
+	}
+	if !gb.isMyTurn(src) {
+		return false
+	}
+	if gb.IsBattlePresent() {
+		return false
+	}
+	allowedMoves := gb.AllowedMoves(src)
+	for _, p := range allowedMoves {
+		if p.X == dst.X && p.Y == dst.Y {
+			return true
+		}
+	}
+	return false
+}
+
+func (gb *GameBackend) tryToBecameQueen(p Point) {
+	curSide := gb.occupiedBy(p)
+	if curSide == None {
+		return
+	}
+	if curSide == Red {
+		if p.Y == size-1 {
+			gb.board[p.Y][p.X].IsQueen = true
+			gb.turn = oppSide[curSide]
+			gb.locked = nil
+		}
+
+	}
+
+	if curSide == Blue {
+		if p.Y == 0 {
+			gb.board[p.Y][p.X].IsQueen = true
+			gb.turn = oppSide[curSide]
+			gb.locked = nil
+		}
+	}
 }

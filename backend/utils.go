@@ -1,5 +1,10 @@
 package backend
 
+var oppSide = map[Side]Side{
+	Blue: Red,
+	Red:  Blue,
+}
+
 func (gb *GameBackend) occupiedBy(p Point) Side {
 	return gb.board[p.Y][p.X].Side
 
@@ -200,4 +205,17 @@ func (gb *GameBackend) currentFigurePossibleAttacks(p Point) []Attack {
 	} else {
 		return gb.currentCheckerPossibleAttacks(p)
 	}
+}
+
+func (gb *GameBackend) canAttack(p Point) bool {
+	curSide := gb.occupiedBy(p)
+	if curSide != gb.turn {
+		return false
+	}
+	possibleAttacks := gb.currentFigurePossibleAttacks(p)
+	return len(possibleAttacks) > 0
+}
+
+func (gb *GameBackend) canMove(p Point) bool {
+	return len(gb.AllowedMoves(p)) > 0
 }
