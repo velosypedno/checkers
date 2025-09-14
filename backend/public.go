@@ -1,40 +1,38 @@
 package backend
 
-type GameState struct {
-	Board [8][8]Checker
-}
-
-type Point struct {
-	X, Y int
-}
-
-type Attack struct {
-	Attack, Move Point
-}
-
-type Side int
-
-type Checker struct {
-	Side    Side
-	IsQueen bool
-}
-
-type GameBackend struct {
-	board  [8][8]Checker
-	turn   Side
-	locked *Point
-}
-
-const (
-	size     = 8
-	redLine  = 3
-	blueLine = 5
+type (
+	Side  int
+	Point struct {
+		X, Y int
+	}
+	Attack struct {
+		Attack, Move Point
+	}
+	Checker struct {
+		Side    Side
+		IsQueen bool
+	}
+	GameBackend struct {
+		board  [8][8]Checker
+		turn   Side
+		locked *Point
+	}
 )
 
 const (
 	None Side = iota
 	Red
 	Blue
+)
+
+type GameState struct {
+	Board [8][8]Checker
+}
+
+const (
+	size     = 8
+	redLine  = 3
+	blueLine = 5
 )
 
 func NewGameBackend() *GameBackend {
@@ -151,7 +149,16 @@ func (gb *GameBackend) IsLocked() bool {
 }
 
 func (gb *GameBackend) CanMove(p Point) bool {
-	return gb.canMove(p)
+	if !gb.onBoard(p) {
+		return false
+	}
+	if !gb.isMyTurn(p) {
+		return false
+	}
+	if gb.IsBattlePresent() {
+		return false
+	}
+	return gb.currentFigureHasPossibleMoves(p)
 }
 
 func (gb *GameBackend) IsBattlePresent() bool {

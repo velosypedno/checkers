@@ -212,6 +212,6 @@ func (gb *GameBackend) currentFigureHasPossibleAttacks(p Point) bool {
 	return len(possibleAttacks) > 0
 }
 
-func (gb *GameBackend) canMove(p Point) bool {
-	return len(gb.AllowedMoves(p)) > 0
+func (gb *GameBackend) currentFigureHasPossibleMoves(p Point) bool {
+	return len(gb.currentFigurePossibleMoves(p)) > 0
 }
