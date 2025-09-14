@@ -215,3 +215,21 @@ func (gb *GameBackend) currentFigureHasPossibleAttacks(p Point) bool {
 func (gb *GameBackend) currentFigureHasPossibleMoves(p Point) bool {
 	return len(gb.currentFigurePossibleMoves(p)) > 0
 }
+
+func (gb *GameBackend) canCurrentCheckerBecomeQueen(p Point) bool {
+	curSide := gb.occupiedBy(p)
+	if curSide == None {
+		return false
+	}
+	if curSide == Red {
+		return p.Y == size-1
+	}
+	return p.Y == 0
+}
+
+func (gb *GameBackend) canCurrentFigureBecomeQueen(p Point) bool {
+	if gb.isQueen(p) {
+		return false
+	}
+	return gb.canCurrentCheckerBecomeQueen(p)
+}
