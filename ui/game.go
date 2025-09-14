@@ -12,7 +12,8 @@ const (
 type GameState int
 
 const (
-	Nothing = iota
+	StartScreen = iota
+	Nothing
 	ChosenToMove
 	Locked
 	ShouldAttack
@@ -40,7 +41,7 @@ func NewGame() *Game {
 		selected:                nil,
 		locked:                  nil,
 		candidatesToAttack:      []backend.Point{},
-		state:                   Nothing,
+		state:                   StartScreen,
 	}
 }
 

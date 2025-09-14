@@ -103,6 +103,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw background
 	screen.Fill(GameBackgroundColor)
 
+	// If in StartScreen state, don't draw the board and pieces
+	if g.state == StartScreen {
+		return
+	}
+
 	// Draw frame
 	frameImg := ebiten.NewImage(boardSizePX+frameSizePX*2, boardSizePX+frameSizePX*2)
 	DrawFrame(frameImg)

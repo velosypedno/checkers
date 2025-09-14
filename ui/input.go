@@ -12,6 +12,9 @@ func (g *Game) ProcessLeftClick() {
 	p := backend.Point{X: xCell, Y: yCell}
 
 	switch g.state {
+	case StartScreen:
+		// Transition to Nothing state to start the game
+		g.Nothing()
 	case Nothing:
 		if g.gameBackend.CanMove(p) {
 			g.ChosenToMove(p)
@@ -58,6 +61,9 @@ func (g *Game) ProcessLeftClick() {
 
 func (g *Game) ProcessRightClick() {
 	switch g.state {
+	case StartScreen:
+		// Transition to Nothing state to start the game
+		g.Nothing()
 	case ChosenToMove:
 		// Transition to Nothing
 		g.Nothing()
@@ -72,6 +78,8 @@ func (g *Game) ProcessRightClick() {
 
 func (g *Game) ProcessNothingHappens() {
 	switch g.state {
+	case StartScreen:
+		// Do nothing in start screen
 	case Nothing:
 		// Transition to Locked
 		if g.gameBackend.IsLocked() {
