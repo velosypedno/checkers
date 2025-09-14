@@ -24,13 +24,13 @@ func (gb *GameBackend) AllowedMoves(p Point) []Point {
 	if !gb.onBoard(p) {
 		return []Point{}
 	}
+	if gb.occupiedBy(p) == None {
+		return []Point{}
+	}
 	if !gb.isMyTurn(p) {
 		return []Point{}
 	}
 	if gb.IsBattlePresent() {
-		return []Point{}
-	}
-	if gb.occupiedBy(p) == None {
 		return []Point{}
 	}
 	return gb.currentFigurePossibleMoves(p)
@@ -38,17 +38,7 @@ func (gb *GameBackend) AllowedMoves(p Point) []Point {
 
 func (gb *GameBackend) PossibleAttacks(x, y int) []Attack {
 	p := Point{x, y}
-	curSide := gb.occupiedBy(p)
-	attacks := []Attack{}
-	candidates := gb.checkerAttacks(p)
-	for _, c := range candidates {
-		if gb.onBoard(c.Move) &&
-			gb.occupiedBy(c.Attack) == oppSide[curSide] &&
-			gb.occupiedBy(c.Move) == None {
-			attacks = append(attacks, c)
-		}
-	}
-	return attacks
+	return gb.currentFigurePossibleAttacks(p)
 }
 
 func (gb *GameBackend) GetState() GameState {
@@ -64,7 +54,7 @@ func (gb *GameBackend) Move(src, dst Point) {
 	curSide := gb.turn
 	gb.board[dst.Y][dst.X] = gb.board[src.Y][src.X]
 	gb.board[src.Y][src.X] = Checker{None, false}
-	gb.TryToBecameQueen(dst)
+	gb.tryToBecameQueen(dst)
 	gb.turn = oppSide[curSide]
 }
 
@@ -84,7 +74,7 @@ func (gb *GameBackend) Attack(src, dst Point) {
 	gb.board[captured.Y][captured.X] = Checker{None, false}
 	gb.board[dst.Y][dst.X] = gb.board[src.Y][src.X]
 	gb.board[src.Y][src.X] = Checker{None, false}
-	gb.TryToBecameQueen(dst)
+	gb.tryToBecameQueen(dst)
 
 	if !gb.canAttack(dst.X, dst.Y) {
 		gb.turn = oppSide[curSide]

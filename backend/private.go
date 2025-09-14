@@ -45,6 +45,9 @@ func NewGameBackend() *GameBackend {
 }
 
 func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
+	if !gb.onBoard(src) || !gb.onBoard(dst) {
+		return false
+	}
 	if !gb.isMyTurn(src) {
 		return false
 	}
@@ -60,7 +63,7 @@ func (gb *GameBackend) IsPossibleMove(src, dst Point) bool {
 	return false
 }
 
-func (gb *GameBackend) TryToBecameQueen(p Point) {
+func (gb *GameBackend) tryToBecameQueen(p Point) {
 	curSide := gb.occupiedBy(p)
 	if curSide == None {
 		return
@@ -101,15 +104,8 @@ func (gb *GameBackend) canAttack(x, y int) bool {
 	if curSide != gb.turn {
 		return false
 	}
-	candidates := gb.checkerAttacks(Point{x, y})
-	for _, c := range candidates {
-		if gb.onBoard(c.Move) &&
-			gb.occupiedBy(c.Attack) == oppSide[curSide] &&
-			gb.occupiedBy(c.Move) == None {
-			return true
-		}
-	}
-	return false
+	possibleAttacks := gb.currentFigurePossibleAttacks(Point{x, y})
+	return len(possibleAttacks) > 0
 }
 
 func (gb *GameBackend) canMove(p Point) bool {

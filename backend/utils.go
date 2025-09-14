@@ -44,6 +44,26 @@ func (gb *GameBackend) checkerAttacks(p Point) []Attack {
 	return attacks
 }
 
+func (gb *GameBackend) redCheckerPossibleAttacks(p Point) []Attack {
+	checkerPossibleAttacks := []Attack{}
+	for _, a := range gb.checkerAttacks(p) {
+		if gb.onBoard(a.Move) && gb.occupiedBy(a.Attack) == Blue && gb.occupiedBy(a.Move) == None {
+			checkerPossibleAttacks = append(checkerPossibleAttacks, a)
+		}
+	}
+	return checkerPossibleAttacks
+}
+
+func (gb *GameBackend) blueCheckerPossibleAttacks(p Point) []Attack {
+	checkerPossibleAttacks := []Attack{}
+	for _, a := range gb.checkerAttacks(p) {
+		if gb.onBoard(a.Move) && gb.occupiedBy(a.Attack) == Red && gb.occupiedBy(a.Move) == None {
+			checkerPossibleAttacks = append(checkerPossibleAttacks, a)
+		}
+	}
+	return checkerPossibleAttacks
+}
+
 func (gb *GameBackend) redCheckerMoves(p Point) []Point {
 	return []Point{
 		{p.X + 1, p.Y + 1},
@@ -129,4 +149,50 @@ func (gb *GameBackend) currentFigurePossibleMoves(p Point) []Point {
 		return gb.blueCheckerPossibleMoves(p)
 	}
 	return []Point{}
+}
+
+func (gb *GameBackend) currentQueenPossibleAttacks(p Point) []Attack {
+	sides := []Point{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
+	possibleAttacks := []Attack{}
+	curSide := gb.occupiedBy(p)
+	var opponentFigure *Point = nil
+	for _, s := range sides {
+		for i := 1; i < size; i++ {
+			curP := Point{p.X + (i * s.X), p.Y + (i * s.Y)}
+			if !gb.onBoard(curP) {
+				break
+			}
+			if gb.occupiedBy(curP) == oppSide[curSide] {
+				if opponentFigure != nil {
+					break
+				} else {
+					opponentFigure = &curP
+					continue
+				}
+			}
+			if gb.occupiedBy(curP) == None {
+				if opponentFigure != nil {
+					possibleAttacks = append(possibleAttacks, Attack{*opponentFigure, curP})
+				}
+			} else {
+				break
+			}
+		}
+		opponentFigure = nil
+	}
+	return possibleAttacks
+}
+
+func (gb *GameBackend) currentFigurePossibleAttacks(p Point) []Attack {
+	curSide := gb.occupiedBy(p)
+	if gb.isQueen(p) {
+		return gb.currentQueenPossibleAttacks(p)
+	}
+	if curSide == Red {
+		return gb.redCheckerPossibleAttacks(p)
+	}
+	if curSide == Blue {
+		return gb.blueCheckerPossibleAttacks(p)
+	}
+	return []Attack{}
 }
