@@ -207,11 +207,7 @@ func (gb *GameBackend) currentFigurePossibleAttacks(p Point) []Attack {
 	}
 }
 
-func (gb *GameBackend) canAttack(p Point) bool {
-	curSide := gb.occupiedBy(p)
-	if curSide != gb.turn {
-		return false
-	}
+func (gb *GameBackend) currentFigureHasPossibleAttacks(p Point) bool {
 	possibleAttacks := gb.currentFigurePossibleAttacks(p)
 	return len(possibleAttacks) > 0
 }

@@ -115,7 +115,7 @@ func (gb *GameBackend) Attack(src, dst Point) {
 	gb.board[src.Y][src.X] = Checker{None, false}
 	gb.tryToBecameQueen(dst)
 
-	if !gb.canAttack(dst) {
+	if !gb.IsCandidateToAttack(dst) {
 		gb.turn = oppSide[curSide]
 		gb.locked = nil
 	} else {
@@ -135,7 +135,7 @@ func (gb *GameBackend) GetCheckersThatCanAttack() []Point {
 	}
 	checkersThatCanAttack := []Point{}
 	for _, candidate := range candidates {
-		if gb.canAttack(candidate) {
+		if gb.currentFigureHasPossibleAttacks(candidate) {
 			checkersThatCanAttack = append(checkersThatCanAttack, candidate)
 		}
 	}
@@ -164,7 +164,7 @@ func (gb *GameBackend) IsBattlePresent() bool {
 		}
 	}
 	for _, candidate := range candidates {
-		if gb.canAttack(candidate) {
+		if gb.IsCandidateToAttack(candidate) {
 			return true
 		}
 	}
@@ -172,7 +172,16 @@ func (gb *GameBackend) IsBattlePresent() bool {
 }
 
 func (gb *GameBackend) IsCandidateToAttack(p Point) bool {
-	return gb.onBoard(p) && gb.canAttack(p)
+	if !gb.onBoard(p) {
+		return false
+	}
+	if !gb.isMyTurn(p) {
+		return false
+	}
+	if !gb.currentFigureHasPossibleAttacks(p) {
+		return false
+	}
+	return true
 }
 
 func (gb *GameBackend) IsPossibleAttack(src, dst Point) bool {
@@ -182,7 +191,7 @@ func (gb *GameBackend) IsPossibleAttack(src, dst Point) bool {
 	if !gb.isMyTurn(src) {
 		return false
 	}
-	if !gb.canAttack(src) {
+	if !gb.currentFigureHasPossibleAttacks(src) {
 		return false
 	}
 	possibleAttacks := gb.PossibleAttacks(src.X, src.Y)
