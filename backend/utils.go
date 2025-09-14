@@ -151,6 +151,17 @@ func (gb *GameBackend) currentFigurePossibleMoves(p Point) []Point {
 	return []Point{}
 }
 
+func (gb *GameBackend) currentCheckerPossibleAttacks(p Point) []Attack {
+	curSide := gb.occupiedBy(p)
+	if curSide == Red {
+		return gb.redCheckerPossibleAttacks(p)
+	}
+	if curSide == Blue {
+		return gb.blueCheckerPossibleAttacks(p)
+	}
+	return []Attack{}
+}
+
 func (gb *GameBackend) currentQueenPossibleAttacks(p Point) []Attack {
 	sides := []Point{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
 	possibleAttacks := []Attack{}
@@ -184,15 +195,9 @@ func (gb *GameBackend) currentQueenPossibleAttacks(p Point) []Attack {
 }
 
 func (gb *GameBackend) currentFigurePossibleAttacks(p Point) []Attack {
-	curSide := gb.occupiedBy(p)
 	if gb.isQueen(p) {
 		return gb.currentQueenPossibleAttacks(p)
+	} else {
+		return gb.currentCheckerPossibleAttacks(p)
 	}
-	if curSide == Red {
-		return gb.redCheckerPossibleAttacks(p)
-	}
-	if curSide == Blue {
-		return gb.blueCheckerPossibleAttacks(p)
-	}
-	return []Attack{}
 }
