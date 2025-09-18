@@ -14,6 +14,11 @@ func (g *Game) isClickOnStartButton(x, y int) bool {
 }
 
 func (g *Game) ProcessLeftClick() {
+	// Don't process human input if it's AI's turn
+	if g.gameBackend.GetCurrentTurn() == backend.Red {
+		return
+	}
+
 	x, y := ebiten.CursorPosition()
 	xCell := (x - offsetXY - frameSizePX) / cellSizePX
 	yCell := (y - offsetXY - frameSizePX) / cellSizePX
@@ -70,6 +75,11 @@ func (g *Game) ProcessLeftClick() {
 }
 
 func (g *Game) ProcessRightClick() {
+	// Don't process human input if it's AI's turn
+	if g.gameBackend.GetCurrentTurn() == backend.Red {
+		return
+	}
+
 	x, y := ebiten.CursorPosition()
 	switch g.state {
 	case StartScreen:
@@ -94,6 +104,12 @@ func (g *Game) ProcessNothingHappens() {
 	case StartScreen:
 		// Do nothing in start screen
 	case Nothing:
+		// Check if it's AI's turn (Red player)
+		if g.gameBackend.GetCurrentTurn() == backend.Red {
+			g.MakeAIMove()
+			return
+		}
+
 		// Transition to Locked
 		if g.gameBackend.IsLocked() {
 			g.Locked()
@@ -105,6 +121,11 @@ func (g *Game) ProcessNothingHappens() {
 			break
 		}
 	case ShouldAttack:
+		// Check if it's AI's turn (Red player)
+		if g.gameBackend.GetCurrentTurn() == backend.Red {
+			g.MakeAIMove()
+			return
+		}
 	case ChosenToMove:
 	case ChosenToAttack:
 	case Locked:

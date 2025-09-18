@@ -89,3 +89,20 @@ func (g *Game) Locked() {
 	g.possibleMovesOfSelected = []backend.Point{}
 	g.possibleAttacksSelected = g.gameBackend.PossibleAttacks(g.selected.X, g.selected.Y)
 }
+
+func (g *Game) MakeAIMove() {
+	// Get the best move for Red (AI)
+	bestMove := backend.GetBestMoveForRed(g.gameBackend, 4) // Depth 3
+
+	if bestMove.Type != "" {
+		// Make the move
+		if bestMove.Type == "attack" {
+			g.gameBackend.Attack(bestMove.From, bestMove.To)
+		} else {
+			g.gameBackend.Move(bestMove.From, bestMove.To)
+		}
+
+		// Reset UI state after AI move
+		g.Nothing()
+	}
+}

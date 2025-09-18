@@ -133,3 +133,7 @@ func (gb *GameBackend) GetState() GameState {
 	state.Board = gb.board
 	return state
 }
+
+func (gb *GameBackend) GetCurrentTurn() Side {
+	return gb.turn
+}
