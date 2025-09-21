@@ -5,9 +5,9 @@ import (
 )
 
 type Move struct {
-	From Point
-	To   Point
-	Type string
+	From     Point
+	To       Point
+	IsAttack bool
 }
 
 type MinimaxResult struct {
@@ -58,9 +58,9 @@ func GetAllPossibleMoves(gb *GameBackend) []Move {
 			attacks := gb.PossibleAttacks(attacker.X, attacker.Y)
 			for _, attack := range attacks {
 				moves = append(moves, Move{
-					From: attacker,
-					To:   attack.Move,
-					Type: "attack",
+					From:     attacker,
+					To:       attack.Move,
+					IsAttack: true,
 				})
 			}
 		}
@@ -71,9 +71,9 @@ func GetAllPossibleMoves(gb *GameBackend) []Move {
 					possibleMoves := gb.AllowedMoves(Point{x, y})
 					for _, move := range possibleMoves {
 						moves = append(moves, Move{
-							From: Point{x, y},
-							To:   move,
-							Type: "move",
+							From:     Point{x, y},
+							To:       move,
+							IsAttack: false,
 						})
 					}
 				}
@@ -91,7 +91,7 @@ func MakeMove(gb *GameBackend, move Move) *GameBackend {
 		locked: gb.locked,
 	}
 
-	if move.Type == "attack" {
+	if move.IsAttack {
 		gbCopy.Attack(move.From, move.To)
 	} else {
 		gbCopy.Move(move.From, move.To)
@@ -114,7 +114,13 @@ func Minimax(gb *GameBackend, depth int, isMaximizing bool, alpha, beta int) int
 		maxEval := math.MinInt32
 		for _, move := range moves {
 			gbCopy := MakeMove(gb, move)
-			eval := Minimax(gbCopy, depth-1, false, alpha, beta)
+			var eval int
+			if gbCopy.IsLocked() {
+				eval = Minimax(gbCopy, depth, true, alpha, beta)
+			} else {
+				eval = Minimax(gbCopy, depth-1, false, alpha, beta)
+			}
+
 			maxEval = max(maxEval, eval)
 			alpha = max(alpha, eval)
 			if beta <= alpha {
@@ -126,7 +132,12 @@ func Minimax(gb *GameBackend, depth int, isMaximizing bool, alpha, beta int) int
 		minEval := math.MaxInt32
 		for _, move := range moves {
 			gbCopy := MakeMove(gb, move)
-			eval := Minimax(gbCopy, depth-1, true, alpha, beta)
+			var eval int
+			if gbCopy.IsLocked() {
+				eval = Minimax(gbCopy, depth, false, alpha, beta)
+			} else {
+				eval = Minimax(gbCopy, depth-1, true, alpha, beta)
+			}
 			minEval = min(minEval, eval)
 			beta = min(beta, eval)
 			if beta <= alpha {
